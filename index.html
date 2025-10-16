@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>감기 자가 진단 및 처방 시뮬레이터</title>
+  <title>감기 진단 및 처방 시뮬레이터</title>
   <style>
     body {
       font-family: 'Pretendard', sans-serif;
@@ -34,7 +34,7 @@
 </head>
 <body>
   <h1>감기 진단 및 처방 시뮬레이터</h1>
-  <p>증상을 입력하세요 (예: 기침, 콧물, 인후통, 근육통 등)</p>
+  <p>증상을 입력하세요 (예: 기침, 두통 등)</p>
   <textarea id="symptoms" rows="3" cols="40" placeholder="증상을 입력하세요"></textarea><br>
   
   <p>체온 입력 (또는 라즈베리파이 센서 자동 측정)</p>
@@ -70,14 +70,15 @@
       let fever = temp >= 37.5;
       let result = "<h2>진단 결과</h2>";
 
-      // 증상 기반 분석
-      let hasCough = sym.includes("기침");
-      let hasSore = sym.includes("인후통") || sym.includes("목");
-      let hasNose = sym.includes("콧물") || sym.includes("코막힘");
-      let hasBody = sym.includes("몸살") || sym.includes("근육통");
-      let hasHeadache = sym.includes("두통");
+      // 정규식으로 비슷한 표현까지 인식
+      const hasCough = /(기침|기침이 나|기침나)/.test(sym);
+      const hasSore = /(인후통|목이 아프|목 아파|목 아프|목이 따갑|목 따갑)/.test(sym);
+      const hasNose = /(콧물|코막힘|코가 막|코 막)/.test(sym);
+      const hasBody = /(몸살|근육통|몸이 아프|근육이 아프|몸 아파|근육 아파)/.test(sym);
+      const hasHeadache = /(두통|머리가 아프|머리 아파|머리 아프)/.test(sym);
 
-      let count = [hasCough, hasSore, hasNose, hasBody, hasHeadache, fever].filter(x=>x).length;
+      const count = [hasCough, hasSore, hasNose, hasBody, hasHeadache, fever].filter(x=>x).length;
+
       if (count === 0) {
         result += "😊 감기 증상이 뚜렷하지 않습니다.<br>충분한 휴식과 수분 섭취를 권장합니다.";
         resDiv.innerHTML = result;
@@ -86,7 +87,6 @@
 
       result += "🩺 감기 가능성이 높습니다.<br><br><strong>임시 처방 내용</strong><br><br>";
 
-      // 처방 시뮬레이션
       if (fever) {
         result += "🌡️ 해열제: 아세트아미노펜(타이레놀정 500mg) — 1정씩, 1일 3회 (식후 30분)<br>";
       }
