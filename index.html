@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>감기 자가 진단 및 처방 시뮬레이터</title>
+  <style>
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background: linear-gradient(120deg, #c2e9fb, #a1c4fd);
+      color: #222;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 { color: #004d99; }
+    input, textarea, button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #bbb;
+    }
+    #result {
+      margin-top: 30px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: inline-block;
+      text-align: left;
+      width: 360px;
+    }
+  </style>
+</head>
+<body>
+  <h1>감기 진단 및 처방 시뮬레이터</h1>
+  <p>증상을 입력하세요 (예: 기침, 콧물, 인후통, 근육통 등)</p>
+  <textarea id="symptoms" rows="3" cols="40" placeholder="증상을 입력하세요"></textarea><br>
+  
+  <p>체온 입력 (또는 라즈베리파이 센서 자동 측정)</p>
+  <input type="number" id="temp" step="0.1" placeholder="예: 37.8">
+  <button onclick="readSensor()">센서에서 불러오기</button><br><br>
+
+  <button onclick="diagnose()">진단 및 처방</button>
+
+  <div id="result"></div>
+
+  <script>
+    async function readSensor() {
+      try {
+        const res = await fetch('http://raspberrypi.local:5000/temperature');
+        const data = await res.json();
+        document.getElementById('temp').value = data.temperature.toFixed(1);
+        alert(`센서에서 체온 ${data.temperature.toFixed(1)}℃를 읽었습니다`);
+      } catch (e) {
+        alert("센서 데이터를 불러올 수 없습니다. 직접 입력해주세요.");
+      }
+    }
+
+    function diagnose() {
+      const sym = document.getElementById('symptoms').value.toLowerCase();
+      const temp = parseFloat(document.getElementById('temp').value);
+      const resDiv = document.getElementById('result');
+
+      if (!sym.trim() && isNaN(temp)) {
+        resDiv.innerHTML = "⚠️ 증상이나 체온을 입력해주세요.";
+        return;
+      }
+
+      let fever = temp >= 37.5;
+      let result = "<h2>진단 결과</h2>";
+
+      // 증상 기반 분석
+      let hasCough = sym.includes("기침");
+      let hasSore = sym.includes("인후통") || sym.includes("목");
+      let hasNose = sym.includes("콧물") || sym.includes("코막힘");
+      let hasBody = sym.includes("몸살") || sym.includes("근육통");
+      let hasHeadache = sym.includes("두통");
+
+      let count = [hasCough, hasSore, hasNose, hasBody, hasHeadache, fever].filter(x=>x).length;
+      if (count === 0) {
+        result += "😊 감기 증상이 뚜렷하지 않습니다.<br>충분한 휴식과 수분 섭취를 권장합니다.";
+        resDiv.innerHTML = result;
+        return;
+      }
+
+      result += "🩺 감기 가능성이 높습니다.<br><br><strong>임시 처방 내용</strong><br><br>";
+
+      // 처방 시뮬레이션
+      if (fever) {
+        result += "🌡️ 해열제: 아세트아미노펜(타이레놀정 500mg) — 1정씩, 1일 3회 (식후 30분)<br>";
+      }
+      if (hasCough) {
+        result += "💨 기침약: 덱스트로메토르판(벤포드시럽) — 10mL씩, 1일 3회<br>";
+      }
+      if (hasNose) {
+        result += "🤧 비충혈 완화제: 슈도에페드린(페니라민정) — 1정씩, 1일 2회<br>";
+      }
+      if (hasSore) {
+        result += "🗣️ 인후통 완화제: 트라스트 목캔디 또는 인후스프레이 — 필요 시 1회 사용<br>";
+      }
+      if (hasBody) {
+        result += "💊 근육통 완화제: 이부프로펜(이부펜정 200mg) — 1정씩, 1일 3회<br>";
+      }
+      if (hasHeadache) {
+        result += "🧠 두통 완화제: 아세트아미노펜 병용 — 위 해열제와 동일<br>";
+      }
+
+      result += "<br><strong>복용 시 주의사항:</strong><br>";
+      result += "- 8시간 간격 유지 및 과량 복용 금지<br>";
+      result += "- 3일 이상 지속 시 병원 방문<br>";
+      result += "- 수분을 충분히 섭취하고 따뜻한 휴식 필요<br>";
+
+      resDiv.innerHTML = result;
+    }
+  </script>
+</body>
+</html>
